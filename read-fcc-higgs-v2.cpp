@@ -27,7 +27,7 @@ Float_t deltaPhi(Float_t phi1, Float_t phi2)
     return TMath::Abs(dphi);
 }
 
-vector<int> find_ele(Delphes *indelphes, double ptcut)
+vector<int> find_ele(Delphes *indelphes, double ptcut, int muon_index)
 {
     vector<int> res;
     for (int e=0; e<indelphes->Electron_size; e++)
@@ -36,6 +36,15 @@ vector<int> find_ele(Delphes *indelphes, double ptcut)
         if (TMath::Abs(indelphes->Electron_Eta[e]) > 2.5) continue;
         //if (TMath::Abs(indelphes->Electron_Eta[e]) > 1.44 && TMath::Abs(indelphes->Electron_Eta[e]) < 1.57) continue;
         //if (indelphes->Electron_IsolationVar[e] < 0.1) continue;
+        if (muon_index != -1)
+        {
+            double deltaR = 0;
+            deltaR += TMath::Power((indelphes->Electron_Eta[e] - indelphes->Muon_Eta[muon_index]), 2);
+            deltaR += TMath::Power((indelphes->Electron_Phi[e] - indelphes->Muon_Phi[muon_index]), 2);
+            deltaR = TMath::Sqrt(deltaR);
+            if (deltaR < 0.3) continue;
+            if (indelphes->Electron_Charge[e] == indelphes->Muon_Charge[muon_index]) continue;
+        }
         res.push_back(e);
     }
     return res;
@@ -107,17 +116,17 @@ void read_fcc_higgs_v2(TString infilename, TString outfilename, bool is_mutaue)
     PlotSet plots;
 
     add_hist_shorthand(&plots, "mutau_e_step01", "mutau_e no b-jets");
-    add_hist_shorthand(&plots, "mutau_e_step02", "mutau_e 0, 1 jet");
+    add_hist_shorthand(&plots, "mutau_e_step02", "mutau_e 0, 1 jet"); // 1
     add_hist_shorthand(&plots, "mutau_e_step03_0j", "mutau_e 0 jet");
-    add_hist_shorthand(&plots, "mutau_e_step03_1j", "mutau_e 1 jet");
+    add_hist_shorthand(&plots, "mutau_e_step03_1j", "mutau_e 1 jet"); // 3
     add_hist_shorthand(&plots, "mutau_e_step04_0j", "mutau_e 1+ muon 0 jet");
-    add_hist_shorthand(&plots, "mutau_e_step04_1j", "mutau_e 1+ muon 1 jet");
+    add_hist_shorthand(&plots, "mutau_e_step04_1j", "mutau_e 1+ muon 1 jet"); // 5
     add_hist_shorthand(&plots, "mutau_e_step05_0j", "mutau_e 1 muon 0 jet");
     add_hist_shorthand(&plots, "mutau_e_step05_1j", "mutau_e 1 muon 1 jet");
     add_hist_shorthand(&plots, "mutau_e_step06_0j", "mutau_e 1+ electron 0 jet");
-    add_hist_shorthand(&plots, "mutau_e_step06_1j", "mutau_e 1+ electron 1 jet");
-    add_hist_shorthand(&plots, "mutau_e_step07_0j", "mutau_e 1 electron 0 jet");
-    add_hist_shorthand(&plots, "mutau_e_step07_1j", "mutau_e 1 electron 1 jet");
+    add_hist_shorthand(&plots, "mutau_e_step06_1j", "mutau_e 1+ electron 1 jet"); // 9
+    add_hist_shorthand(&plots, "mutau_e_step07_0j", "mutau_e 1 electron 0 jet"); // 10
+    add_hist_shorthand(&plots, "mutau_e_step07_1j", "mutau_e 1 electron 1 jet"); // 11
     add_hist_shorthand(&plots, "mutau_e_step08_0j", "mutau_e min pT 0 jet");
     add_hist_shorthand(&plots, "mutau_e_step08_1j", "mutau_e min pT 1 jet");
     add_hist_shorthand(&plots, "mutau_e_step09_0j", "mutau_e max deltaPhi e, met 0 jet");
@@ -180,7 +189,7 @@ void read_fcc_higgs_v2(TString infilename, TString outfilename, bool is_mutaue)
         }
         if (plotthis[6] or plotthis[7])
         {
-            electron_vec = find_ele(indelphes, 10);
+            electron_vec = find_ele(indelphes, 10, plotthis[6] or plotthis[7] ? muon_vec[0] : -1);
             if (electron_vec.size() == 0)
             {
                 plotthis[8] = false;
