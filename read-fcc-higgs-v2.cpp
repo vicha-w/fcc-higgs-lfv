@@ -33,7 +33,7 @@ vector<int> find_ele(Delphes *indelphes, double ptcut, int muon_index)
     for (int e=0; e<indelphes->Electron_size; e++)
     {
         if (indelphes->Electron_PT[e] < ptcut) continue;
-        if (TMath::Abs(indelphes->Electron_Eta[e]) > 2.5) continue;
+        if (TMath::Abs(indelphes->Electron_Eta[e]) > 6.0) continue;
         //if (TMath::Abs(indelphes->Electron_Eta[e]) > 1.44 && TMath::Abs(indelphes->Electron_Eta[e]) < 1.57) continue;
         //if (indelphes->Electron_IsolationVar[e] < 0.1) continue;
         if (muon_index != -1)
@@ -56,7 +56,7 @@ vector<int> find_mu(Delphes *indelphes, double ptcut)
     for (int mu=0; mu<indelphes->Muon_size; mu++)
     {
         if (indelphes->Muon_PT[mu] < ptcut) continue;
-        if (TMath::Abs(indelphes->Muon_Eta[mu]) > 2.4) continue;
+        if (TMath::Abs(indelphes->Muon_Eta[mu]) > 6.0) continue;
         //if (indelphes->Muon_IsolationVar[mu] > 0.15) continue;
         res.push_back(mu);
     }
