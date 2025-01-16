@@ -100,9 +100,9 @@ class PlotSet
         double *primed_variable;
 };
 
-const int HIST_BINS = 20;
+const int HIST_BINS = 200;
 const double HIST_START = 0;
-const double HIST_END   = 200;
+const double HIST_END   = 2000;
 
 void add_hist_shorthand(PlotSet *plots, TString histname, TString propername)
 {
