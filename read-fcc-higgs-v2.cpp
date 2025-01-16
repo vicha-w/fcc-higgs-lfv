@@ -59,7 +59,7 @@ vector<int> find_mu(Delphes *indelphes, double ptcut, int electron_index)
         if (TMath::Abs(indelphes->Muon_Eta[mu]) > 6.0) continue;
         //if (indelphes->Muon_IsolationVar[mu] > 0.15) continue;
 
-        if (electron_index != 1)
+        if (electron_index != -1)
         {
             double deltaR = 0;
             deltaR += TMath::Power((indelphes->Muon_Eta[mu] - indelphes->Electron_Eta[electron_index]), 2);
