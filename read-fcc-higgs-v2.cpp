@@ -142,8 +142,12 @@ void read_fcc_higgs_v2(TString infilename, TString outfilename)
     add_hist_shorthand(&plots_mutaue, "mutau_e_step08_1j", "mutau_e min pT 1 jet");
     add_hist_shorthand(&plots_mutaue, "mutau_e_step09_0j", "mutau_e max deltaPhi e, met 0 jet");
     add_hist_shorthand(&plots_mutaue, "mutau_e_step09_1j", "mutau_e max deltaPhi e, met 1 jet");
-    add_hist_shorthand(&plots_mutaue, "mutau_e_step10_0j", "mutau_e min deltaPhi e, mu 0 jet");
-    add_hist_shorthand(&plots_mutaue, "mutau_e_step10_1j", "mutau_e min deltaPhi e, mu 1 jet");
+    add_hist_shorthand(&plots_mutaue, "mutau_e_step10_0j", "mutau_e min deltaPhi e, mu 0 jet"); // 16
+    add_hist_shorthand(&plots_mutaue, "mutau_e_step10_1j", "mutau_e min deltaPhi e, mu 1 jet"); // 17
+    add_hist_shorthand(&plots_mutaue, "mutau_e_highmass_0j", "mutau_e high mass 0 jet"); // 18
+    add_hist_shorthand(&plots_mutaue, "mutau_e_highmass_1j", "mutau_e high mass 1 jet"); // 19
+    add_hist_shorthand(&plots_mutaue, "mutau_e_lowhmass_0j", "mutau_e low mass 0 jet"); // 20
+    add_hist_shorthand(&plots_mutaue, "mutau_e_lowhmass_1j", "mutau_e low mass 1 jet"); // 21
 
     add_hist_shorthand(&plots_etaumu, "etau_mu_step01",    "etau_mu no b-jets");
     add_hist_shorthand(&plots_etaumu, "etau_mu_step02",    "etau_mu 0, 1 jet"); // 1
@@ -161,11 +165,15 @@ void read_fcc_higgs_v2(TString infilename, TString outfilename)
     add_hist_shorthand(&plots_etaumu, "etau_mu_step08_1j", "etau_mu min pT 1 jet");
     add_hist_shorthand(&plots_etaumu, "etau_mu_step09_0j", "etau_mu max deltaPhi mu, met 0 jet");
     add_hist_shorthand(&plots_etaumu, "etau_mu_step09_1j", "etau_mu max deltaPhi mu, met 1 jet");
-    add_hist_shorthand(&plots_etaumu, "etau_mu_step10_0j", "etau_mu min deltaPhi e, mu 0 jet");
-    add_hist_shorthand(&plots_etaumu, "etau_mu_step10_1j", "etau_mu min deltaPhi e, mu 1 jet");
+    add_hist_shorthand(&plots_etaumu, "etau_mu_step10_0j", "etau_mu min deltaPhi e, mu 0 jet"); // 16
+    add_hist_shorthand(&plots_etaumu, "etau_mu_step10_1j", "etau_mu min deltaPhi e, mu 1 jet"); // 17
+    add_hist_shorthand(&plots_etaumu, "etau_mu_highmass_0j", "etau_mu high mass 0 jet"); // 18
+    add_hist_shorthand(&plots_etaumu, "etau_mu_highmass_1j", "etau_mu high mass 1 jet"); // 19
+    add_hist_shorthand(&plots_etaumu, "etau_mu_lowmass_0j", "etau_mu low mass 0 jet"); // 20
+    add_hist_shorthand(&plots_etaumu, "etau_mu_lowmass_1j", "etau_mu low mass 1 jet"); // 21
 
-    bool plotthis_mutaue[18];
-    bool plotthis_etaumu[18];
+    bool plotthis_mutaue[22];
+    bool plotthis_etaumu[22];
     double mass_collinear_mutaue = 0;
     double mass_collinear_etaumu = 0;
     plots_mutaue.PrimeFill(&mass_collinear_mutaue);
@@ -184,7 +192,7 @@ void read_fcc_higgs_v2(TString infilename, TString outfilename)
         // mu + tau_e
         ///////////////////////////////////////
 
-        for (int i=0; i<18; i++) plotthis_mutaue[i] = false;
+        for (int i=0; i<22; i++) plotthis_mutaue[i] = false;
 
         vector<int> passed_jets;
         vector<int> passed_b_jets;
@@ -278,12 +286,21 @@ void read_fcc_higgs_v2(TString infilename, TString outfilename)
                 plotthis_mutaue[17] = false;
             }
         }
+        if (plotthis_mutaue[16])
+        {
+            plotthis_mutaue[18] = indelphes->Muon_PT[only_mu] > 150;
+            plotthis_mutaue[20] = indelphes->Muon_PT[only_mu] > 60;
+        }
+        if (plotthis_mutaue[17])
+        {
+            plotthis_mutaue[19] = indelphes->Muon_PT[only_mu] > 150;
+            plotthis_mutaue[21] = indelphes->Muon_PT[only_mu] > 60;
+        }
 
         //TLorentzVector p4_tau;
         //TLorentzVector p4_lepton;
         if (plotthis_mutaue[16] or plotthis_mutaue[17])
         {
-
             p4_tau.SetPtEtaPhiM(indelphes->Electron_PT[only_ele], indelphes->Electron_Eta[only_ele], indelphes->Electron_Phi[only_ele], 0.000511);
             p4_lepton.SetPtEtaPhiM(indelphes->Muon_PT[only_mu], indelphes->Muon_Eta[only_mu], indelphes->Muon_Phi[only_mu], 0.10566);
         }
@@ -310,13 +327,13 @@ void read_fcc_higgs_v2(TString infilename, TString outfilename)
         x_vis_tau = p4_tau.Pt() / (p4_tau.Pt() + pT_nu_est);
         mass_collinear_mutaue = (p4_tau+p4_lepton).M() / TMath::Sqrt(x_vis_tau);
 
-        for (int i=0; i<18; i++) if (plotthis_mutaue[i]) plots_mutaue.Fill(i);
+        for (int i=0; i<22; i++) if (plotthis_mutaue[i]) plots_mutaue.Fill(i);
 
         ///////////////////////////////////////
         // e + tau_mu
         ///////////////////////////////////////
 
-        for (int i=0; i<18; i++) plotthis_etaumu[i] = false;
+        for (int i=0; i<22; i++) plotthis_etaumu[i] = false;
 
         passed_jets.clear();
         passed_b_jets.clear();
@@ -410,12 +427,21 @@ void read_fcc_higgs_v2(TString infilename, TString outfilename)
                 plotthis_etaumu[17] = false;
             }
         }
+        if (plotthis_etaumu[16])
+        {
+            plotthis_etaumu[18] = indelphes->Electron_PT[only_ele] > 150;
+            plotthis_etaumu[20] = indelphes->Electron_PT[only_ele] > 60;
+        }
+        if (plotthis_etaumu[17])
+        {
+            plotthis_etaumu[19] = indelphes->Electron_PT[only_ele] > 150;
+            plotthis_etaumu[21] = indelphes->Electron_PT[only_ele] > 60;
+        }
 
         //TLorentzVector p4_tau;
         //TLorentzVector p4_lepton;
         if (plotthis_etaumu[16] or plotthis_etaumu[17])
         {
-
             p4_lepton.SetPtEtaPhiM(indelphes->Electron_PT[only_ele], indelphes->Electron_Eta[only_ele], indelphes->Electron_Phi[only_ele], 0.000511);
             p4_tau.SetPtEtaPhiM(indelphes->Muon_PT[only_mu], indelphes->Muon_Eta[only_mu], indelphes->Muon_Phi[only_mu], 0.10566);
         }
