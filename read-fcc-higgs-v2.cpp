@@ -146,8 +146,8 @@ void read_fcc_higgs_v2(TString infilename, TString outfilename)
     add_hist_shorthand(&plots_mutaue, "mutau_e_step10_1j", "mutau_e min deltaPhi e, mu 1 jet"); // 17
     add_hist_shorthand(&plots_mutaue, "mutau_e_highmass_0j", "mutau_e high mass 0 jet"); // 18
     add_hist_shorthand(&plots_mutaue, "mutau_e_highmass_1j", "mutau_e high mass 1 jet"); // 19
-    add_hist_shorthand(&plots_mutaue, "mutau_e_lowhmass_0j", "mutau_e low mass 0 jet"); // 20
-    add_hist_shorthand(&plots_mutaue, "mutau_e_lowhmass_1j", "mutau_e low mass 1 jet"); // 21
+    add_hist_shorthand(&plots_mutaue, "mutau_e_lowmass_0j", "mutau_e low mass 0 jet"); // 20
+    add_hist_shorthand(&plots_mutaue, "mutau_e_lowmass_1j", "mutau_e low mass 1 jet"); // 21
 
     add_hist_shorthand(&plots_etaumu, "etau_mu_step01",    "etau_mu no b-jets");
     add_hist_shorthand(&plots_etaumu, "etau_mu_step02",    "etau_mu 0, 1 jet"); // 1
