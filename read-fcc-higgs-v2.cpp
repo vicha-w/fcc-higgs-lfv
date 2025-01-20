@@ -286,15 +286,15 @@ void read_fcc_higgs_v2(TString infilename, TString outfilename)
                 plotthis_mutaue[17] = false;
             }
         }
-        if (plotthis_mutaue[16])
+        if (plotthis_mutaue[16]) // zero jets
         {
-            plotthis_mutaue[18] = indelphes->Muon_PT[only_mu] > 150;
-            plotthis_mutaue[20] = indelphes->Muon_PT[only_mu] > 60;
+            plotthis_mutaue[18] = indelphes->Muon_PT[only_mu] > 150 and deltaPhi_e_met < 0.3;
+            plotthis_mutaue[20] = indelphes->Muon_PT[only_mu] > 60  and deltaPhi_e_met < 0.7;
         }
-        if (plotthis_mutaue[17])
+        if (plotthis_mutaue[17]) // one jet
         {
-            plotthis_mutaue[19] = indelphes->Muon_PT[only_mu] > 150;
-            plotthis_mutaue[21] = indelphes->Muon_PT[only_mu] > 60;
+            plotthis_mutaue[19] = indelphes->Muon_PT[only_mu] > 150 and deltaPhi_e_met < 0.3;
+            plotthis_mutaue[21] = indelphes->Muon_PT[only_mu] > 60  and deltaPhi_e_met < 0.7;
         }
 
         //TLorentzVector p4_tau;
@@ -427,15 +427,15 @@ void read_fcc_higgs_v2(TString infilename, TString outfilename)
                 plotthis_etaumu[17] = false;
             }
         }
-        if (plotthis_etaumu[16])
+        if (plotthis_etaumu[16]) // zero jets
         {
-            plotthis_etaumu[18] = indelphes->Electron_PT[only_ele] > 150;
-            plotthis_etaumu[20] = indelphes->Electron_PT[only_ele] > 60;
+            plotthis_etaumu[18] = indelphes->Electron_PT[only_ele] > 150 and deltaPhi_mu_met < 0.3;
+            plotthis_etaumu[20] = indelphes->Electron_PT[only_ele] > 60  and deltaPhi_mu_met < 0.7;
         }
-        if (plotthis_etaumu[17])
+        if (plotthis_etaumu[17]) // one jet
         {
-            plotthis_etaumu[19] = indelphes->Electron_PT[only_ele] > 150;
-            plotthis_etaumu[21] = indelphes->Electron_PT[only_ele] > 60;
+            plotthis_etaumu[19] = indelphes->Electron_PT[only_ele] > 150 and deltaPhi_mu_met < 0.3;
+            plotthis_etaumu[21] = indelphes->Electron_PT[only_ele] > 60  and deltaPhi_mu_met < 0.7;
         }
 
         //TLorentzVector p4_tau;
@@ -468,7 +468,7 @@ void read_fcc_higgs_v2(TString infilename, TString outfilename)
         x_vis_tau = p4_tau.Pt() / (p4_tau.Pt() + pT_nu_est);
         mass_collinear_etaumu = (p4_tau+p4_lepton).M() / TMath::Sqrt(x_vis_tau);
 
-        for (int i=0; i<18; i++) if (plotthis_etaumu[i]) plots_etaumu.Fill(i);
+        for (int i=0; i<22; i++) if (plotthis_etaumu[i]) plots_etaumu.Fill(i);
     }
 
     TFile *outfile = new TFile(outfilename, "RECREATE");
