@@ -39,6 +39,9 @@ def argpass():
     parser.add_argument(
         "--process", type=str, default=None, help="Process to run the script"
     )
+    parser.add_argument(
+        "--overwrite", action="store_true", help="Overwrite the output directory", default=False
+    )
     parser.add_argument("--outdir", type=str, default="auto", help="Output directory")
     parser.add_argument(
         "--postonly",
@@ -54,13 +57,22 @@ def argpass():
     parser.add_argument(
         "--max_auto_cpus", type=int, default=20, help="Max number of CPUs to use"
     )
+    
+    # Experimental feature
+    # extracted file path
+    parser.add_argument(
+        "--minimal", action="store_true", help="Use minimal file", default=False
+    )
+    
     args = parser.parse_args()
 
     return args
 
 
 def get_files(args) -> list:
-    path = ALL_PROCESSES[args.process]["path"]
+
+    if args.minimal: path = ALL_PROCESSES[args.process]["minimal"]
+    else: path = ALL_PROCESSES[args.process]["path"]
     files = []
     mapped = [path] if isinstance(path, str) else path  # Mapped to list
     for element in mapped:
@@ -76,17 +88,23 @@ def get_files(args) -> list:
 
 def job_submit(args):
     def validate_args(args):
-        if args.process not in ALL_PROCESSES.keys():
-            print(f"Process {args.process} is not available")
-            sys.exit(1)
+        
+        assert args.process in ALL_PROCESSES.keys(), f"Process {args.process} is not available"
 
         outdir = args.outdir
         if outdir == "auto":
             outdir = f"outputs/{args.process}"
+        
+        if args.minimal: outdir += "_minimal"
 
         if os.path.exists(outdir):
-            print(f"Directory {outdir} already exists")
-            sys.exit(1)
+            if args.overwrite:
+                print(f"Overwriting the directory {outdir}")
+                os.system(f"rm -rf {outdir}")
+                
+            else:
+                print(f"Directory {outdir} already exists")
+                sys.exit(1)
 
         args.outdir = outdir
         files = get_files(args)
@@ -117,6 +135,8 @@ def job_submit(args):
         slurm_script += (
             f"python -u pyinterface.py --mode job_monitor --process {args.process}"
         )
+        
+        if args.minimal: slurm_script += " --minimal"
 
         return slurm_script
 
