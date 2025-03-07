@@ -179,7 +179,6 @@ def get_cross_section(text):
     return None, None
 
 def get_gained_events(text):
-    # Format:  | sum                                                |       50000      50000       4983 |   2.179e-05  2.762e-07 |
     lines = text.split("\n")
     for line in lines:
         if "| sum" in line:
@@ -201,7 +200,16 @@ def phys_summary(logger, args):
     text += "Efficiency".ljust(ljust_space) + "Cross-section (pb)".ljust(ljust_space) + "Uncertainty (pb)".ljust(ljust_space)
     logger.info(text)
     for seed in seeds:
-        requested_evts = args.nevents // args.njobs
+        # requested_evts = args.nevents // args.njobs
+        
+        # Read from info.csv
+        info = pd.read_csv("info.csv")
+        try:
+            requested_evts = info[info["seed"] == seed]["nevents"].values[0]
+        except:
+            print(f"Seed {seed} not found in info.csv, skipping...")
+            continue
+        
         # Get the text in log file from logs/log_{seed}.txt
         with open(f"logs/log_{seed}.txt", "r") as f:
             log_text = f.read()
@@ -283,13 +291,13 @@ def parallen_run(args):
 
 
         # Clean up
+        os.system("mkdir logs")
+        os.system("mv log_* logs/")
         if not args.noclean:
             for seed in seeds:
                 os.system(f"rm events_{seed}.lhe.gz")
                 os.system(f"rm events_{seed}.hepmc")
                 os.system(f"rm pythia_card_{seed}.cmd")
-            os.system("mkdir logs")
-            os.system("mv log_* logs/")
 
         if args.mg5parall:
             # Remove tar
@@ -318,21 +326,18 @@ def parallen_run(args):
         groups = ["madgraph", "pythia", "delphes"]
 
     ljust_space = 30
-    for group in ["madgraph", "pythia", "delphes"]:
+    for group in groups:
         pct = sum(info[group]) / sum_all_runtime * 100
         logger.info(
-            # f"\t- {group.capitalize()} total, single-core: {format_time(sum(info[group]))} ({pct:.2f}%)"
             f"\t- {group.capitalize()} total, single-core:".ljust(ljust_space+10) + f"{format_time(sum(info[group]))}".ljust(ljust_space) + f"({pct:.2f}%)"
         )
 
     # Single and multi core
     print("\n")
     logger.info(
-        # f"\t- Overall, single-core: {format_time(sum(info['runtime']))}, {tot_evts / sum(info['runtime']):.2f} evts/s"
         "\t- Overall, single-core:".ljust(ljust_space+10) + f"{format_time(sum(info['runtime']))}".ljust(ljust_space) + f"{tot_evts / sum(info['runtime']):.2f} evts/s"
     )
     logger.info(
-        # f"\t- Overall, multi-cores: {format_time(runtime['All'])}, {tot_evts / runtime['All']:.2f} evts/s"
         "\t- Overall, multi-cores:".ljust(ljust_space+10) + f"{format_time(runtime['All'])}".ljust(ljust_space) + f"{tot_evts / runtime['All']:.2f} evts/s"
     )
 
