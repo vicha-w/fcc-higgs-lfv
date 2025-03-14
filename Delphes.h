@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////
 // This class has been automatically generated on
-// Fri Dec 20 02:09:32 2024 by ROOT version 6.30/07
+// Fri Mar  7 00:20:23 2025 by ROOT version 6.30/04
 // from TTree Delphes/Analysis tree
-// found on file: /work/project/physics/psriling/public/delphes_outputs/ttbar_hvq_00_output_17.root
+// found on file: /work/project/physics/psriling/public/delphes_output_10.root
 //////////////////////////////////////////////////////////
 
 #ifndef Delphes_h
@@ -23,36 +23,35 @@ public :
 
 // Fixed size dimensions of array or collections stored in the TTree if any.
    static constexpr Int_t kMaxEvent = 1;
-   static constexpr Int_t kMaxEventLHEF = 1;
-   static constexpr Int_t kMaxWeightLHEF = 1;
-   static constexpr Int_t kMaxParticle = 9686;
+   static constexpr Int_t kMaxWeight = 2;
+   static constexpr Int_t kMaxParticle = 10946;
    static constexpr Int_t kMaxGenMissingET = 1;
-   static constexpr Int_t kMaxEFlowTrack = 1143;
-   static constexpr Int_t kMaxEFlowPhoton = 1336;
-   static constexpr Int_t kMaxEFlowNeutralHadron = 815;
+   static constexpr Int_t kMaxEFlowTrack = 1011;
+   static constexpr Int_t kMaxEFlowPhoton = 1102;
+   static constexpr Int_t kMaxEFlowNeutralHadron = 742;
    static constexpr Int_t kMaxPhoton = 11;
-   static constexpr Int_t kMaxElectron = 4;
+   static constexpr Int_t kMaxElectron = 3;
    static constexpr Int_t kMaxMuon = 4;
-   static constexpr Int_t kMaxJet = 21;
-   static constexpr Int_t kMaxPhotonNoIso = 153;
-   static constexpr Int_t kMaxElectronNoIso = 9;
-   static constexpr Int_t kMaxMuonNoIso = 7;
-   static constexpr Int_t kMaxJetNoIso = 21;
-   static constexpr Int_t kMaxGenJet02 = 21;
-   static constexpr Int_t kMaxGenJet04 = 21;
-   static constexpr Int_t kMaxGenJet08 = 32;
+   static constexpr Int_t kMaxJet = 26;
+   static constexpr Int_t kMaxPhotonNoIso = 122;
+   static constexpr Int_t kMaxElectronNoIso = 6;
+   static constexpr Int_t kMaxMuonNoIso = 5;
+   static constexpr Int_t kMaxJetNoIso = 26;
+   static constexpr Int_t kMaxGenJet02 = 13;
+   static constexpr Int_t kMaxGenJet04 = 26;
+   static constexpr Int_t kMaxGenJet08 = 33;
    static constexpr Int_t kMaxGenJet15 = 17;
-   static constexpr Int_t kMaxParticleFlowJet02 = 21;
-   static constexpr Int_t kMaxParticleFlowJet04 = 21;
-   static constexpr Int_t kMaxParticleFlowJet08 = 31;
+   static constexpr Int_t kMaxParticleFlowJet02 = 12;
+   static constexpr Int_t kMaxParticleFlowJet04 = 26;
+   static constexpr Int_t kMaxParticleFlowJet08 = 34;
    static constexpr Int_t kMaxParticleFlowJet15 = 16;
-   static constexpr Int_t kMaxCaloJet02 = 21;
-   static constexpr Int_t kMaxCaloJet04 = 19;
-   static constexpr Int_t kMaxCaloJet08 = 30;
-   static constexpr Int_t kMaxCaloJet15 = 16;
-   static constexpr Int_t kMaxTrackJet02 = 18;
-   static constexpr Int_t kMaxTrackJet04 = 16;
-   static constexpr Int_t kMaxTrackJet08 = 17;
+   static constexpr Int_t kMaxCaloJet02 = 10;
+   static constexpr Int_t kMaxCaloJet04 = 17;
+   static constexpr Int_t kMaxCaloJet08 = 33;
+   static constexpr Int_t kMaxCaloJet15 = 15;
+   static constexpr Int_t kMaxTrackJet02 = 10;
+   static constexpr Int_t kMaxTrackJet04 = 10;
+   static constexpr Int_t kMaxTrackJet08 = 20;
    static constexpr Int_t kMaxTrackJet15 = 13;
    static constexpr Int_t kMaxMissingET = 1;
    static constexpr Int_t kMaxScalarHT = 1;
@@ -80,25 +79,11 @@ public :
    Float_t         Event_PDF1[kMaxEvent];   //[Event_]
    Float_t         Event_PDF2[kMaxEvent];   //[Event_]
    Int_t           Event_size;
-   Int_t           EventLHEF_;
-   UInt_t          EventLHEF_fUniqueID[kMaxEventLHEF];   //[EventLHEF_]
-   UInt_t          EventLHEF_fBits[kMaxEventLHEF];   //[EventLHEF_]
-   Long64_t        EventLHEF_Number[kMaxEventLHEF];   //[EventLHEF_]
-   Float_t         EventLHEF_ReadTime[kMaxEventLHEF];   //[EventLHEF_]
-   Float_t         EventLHEF_ProcTime[kMaxEventLHEF];   //[EventLHEF_]
-   Int_t           EventLHEF_ProcessID[kMaxEventLHEF];   //[EventLHEF_]
-   Float_t         EventLHEF_Weight[kMaxEventLHEF];   //[EventLHEF_]
-   Float_t         EventLHEF_CrossSection[kMaxEventLHEF];   //[EventLHEF_]
-   Float_t         EventLHEF_ScalePDF[kMaxEventLHEF];   //[EventLHEF_]
-   Float_t         EventLHEF_AlphaQED[kMaxEventLHEF];   //[EventLHEF_]
-   Float_t         EventLHEF_AlphaQCD[kMaxEventLHEF];   //[EventLHEF_]
-   Int_t           EventLHEF_size;
-   Int_t           WeightLHEF_;
-   UInt_t          WeightLHEF_fUniqueID[kMaxWeightLHEF];   //[WeightLHEF_]
-   UInt_t          WeightLHEF_fBits[kMaxWeightLHEF];   //[WeightLHEF_]
-   Int_t           WeightLHEF_ID[kMaxWeightLHEF];   //[WeightLHEF_]
-   Float_t         WeightLHEF_Weight[kMaxWeightLHEF];   //[WeightLHEF_]
-   Int_t           WeightLHEF_size;
+   Int_t           Weight_;
+   UInt_t          Weight_fUniqueID[kMaxWeight];   //[Weight_]
+   UInt_t          Weight_fBits[kMaxWeight];   //[Weight_]
+   Float_t         Weight_Weight[kMaxWeight];   //[Weight_]
+   Int_t           Weight_size;
    Int_t           Particle_;
    UInt_t          Particle_fUniqueID[kMaxParticle];   //[Particle_]
    UInt_t          Particle_fBits[kMaxParticle];   //[Particle_]
@@ -1211,25 +1196,11 @@ public :
    TBranch        *b_Event_PDF1;   //!
    TBranch        *b_Event_PDF2;   //!
    TBranch        *b_Event_size;   //!
-   TBranch        *b_EventLHEF_;   //!
-   TBranch        *b_EventLHEF_fUniqueID;   //!
-   TBranch        *b_EventLHEF_fBits;   //!
-   TBranch        *b_EventLHEF_Number;   //!
-   TBranch        *b_EventLHEF_ReadTime;   //!
-   TBranch        *b_EventLHEF_ProcTime;   //!
-   TBranch        *b_EventLHEF_ProcessID;   //!
-   TBranch        *b_EventLHEF_Weight;   //!
-   TBranch        *b_EventLHEF_CrossSection;   //!
-   TBranch        *b_EventLHEF_ScalePDF;   //!
-   TBranch        *b_EventLHEF_AlphaQED;   //!
-   TBranch        *b_EventLHEF_AlphaQCD;   //!
-   TBranch        *b_EventLHEF_size;   //!
-   TBranch        *b_WeightLHEF_;   //!
-   TBranch        *b_WeightLHEF_fUniqueID;   //!
-   TBranch        *b_WeightLHEF_fBits;   //!
-   TBranch        *b_WeightLHEF_ID;   //!
-   TBranch        *b_WeightLHEF_Weight;   //!
-   TBranch        *b_WeightLHEF_size;   //!
+   TBranch        *b_Weight_;   //!
+   TBranch        *b_Weight_fUniqueID;   //!
+   TBranch        *b_Weight_fBits;   //!
+   TBranch        *b_Weight_Weight;   //!
+   TBranch        *b_Weight_size;   //!
    TBranch        *b_Particle_;   //!
    TBranch        *b_Particle_fUniqueID;   //!
    TBranch        *b_Particle_fBits;   //!
@@ -2338,9 +2309,9 @@ Delphes::Delphes(TTree *tree) : fChain(0)
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("/work/project/physics/psriling/public/delphes_outputs/ttbar_hvq_00_output_17.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("/work/project/physics/psriling/public/delphes_output_10.root");
       if (!f || !f->IsOpen()) {
-         f = new TFile("/work/project/physics/psriling/public/delphes_outputs/ttbar_hvq_00_output_17.root");
+         f = new TFile("/work/project/physics/psriling/public/delphes_output_10.root");
       }
       f->GetObject("Delphes",tree);
 
@@ -2411,25 +2382,11 @@ void Delphes::Init(TTree *tree)
    fChain->SetBranchAddress("Event.PDF1", Event_PDF1, &b_Event_PDF1);
    fChain->SetBranchAddress("Event.PDF2", Event_PDF2, &b_Event_PDF2);
    fChain->SetBranchAddress("Event_size", &Event_size, &b_Event_size);
-   fChain->SetBranchAddress("EventLHEF", &EventLHEF_, &b_EventLHEF_);
-   fChain->SetBranchAddress("EventLHEF.fUniqueID", EventLHEF_fUniqueID, &b_EventLHEF_fUniqueID);
-   fChain->SetBranchAddress("EventLHEF.fBits", EventLHEF_fBits, &b_EventLHEF_fBits);
-   fChain->SetBranchAddress("EventLHEF.Number", EventLHEF_Number, &b_EventLHEF_Number);
-   fChain->SetBranchAddress("EventLHEF.ReadTime", EventLHEF_ReadTime, &b_EventLHEF_ReadTime);
-   fChain->SetBranchAddress("EventLHEF.ProcTime", EventLHEF_ProcTime, &b_EventLHEF_ProcTime);
-   fChain->SetBranchAddress("EventLHEF.ProcessID", EventLHEF_ProcessID, &b_EventLHEF_ProcessID);
-   fChain->SetBranchAddress("EventLHEF.Weight", EventLHEF_Weight, &b_EventLHEF_Weight);
-   fChain->SetBranchAddress("EventLHEF.CrossSection", EventLHEF_CrossSection, &b_EventLHEF_CrossSection);
-   fChain->SetBranchAddress("EventLHEF.ScalePDF", EventLHEF_ScalePDF, &b_EventLHEF_ScalePDF);
-   fChain->SetBranchAddress("EventLHEF.AlphaQED", EventLHEF_AlphaQED, &b_EventLHEF_AlphaQED);
-   fChain->SetBranchAddress("EventLHEF.AlphaQCD", EventLHEF_AlphaQCD, &b_EventLHEF_AlphaQCD);
-   fChain->SetBranchAddress("EventLHEF_size", &EventLHEF_size, &b_EventLHEF_size);
-   fChain->SetBranchAddress("WeightLHEF", &WeightLHEF_, &b_WeightLHEF_);
-   fChain->SetBranchAddress("WeightLHEF.fUniqueID", &WeightLHEF_fUniqueID, &b_WeightLHEF_fUniqueID);
-   fChain->SetBranchAddress("WeightLHEF.fBits", &WeightLHEF_fBits, &b_WeightLHEF_fBits);
-   fChain->SetBranchAddress("WeightLHEF.ID", &WeightLHEF_ID, &b_WeightLHEF_ID);
-   fChain->SetBranchAddress("WeightLHEF.Weight", &WeightLHEF_Weight, &b_WeightLHEF_Weight);
-   fChain->SetBranchAddress("WeightLHEF_size", &WeightLHEF_size, &b_WeightLHEF_size);
+   fChain->SetBranchAddress("Weight", &Weight_, &b_Weight_);
+   fChain->SetBranchAddress("Weight.fUniqueID", Weight_fUniqueID, &b_Weight_fUniqueID);
+   fChain->SetBranchAddress("Weight.fBits", Weight_fBits, &b_Weight_fBits);
+   fChain->SetBranchAddress("Weight.Weight", Weight_Weight, &b_Weight_Weight);
+   fChain->SetBranchAddress("Weight_size", &Weight_size, &b_Weight_size);
    fChain->SetBranchAddress("Particle", &Particle_, &b_Particle_);
    fChain->SetBranchAddress("Particle.fUniqueID", Particle_fUniqueID, &b_Particle_fUniqueID);
    fChain->SetBranchAddress("Particle.fBits", Particle_fBits, &b_Particle_fBits);
