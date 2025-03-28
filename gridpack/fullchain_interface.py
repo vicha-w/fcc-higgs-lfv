@@ -32,6 +32,7 @@ def get_args():
     parser.add_argument("--delphes_card",           type=str,   default=DELPEHS_CARD,       help="Path to the Delphes card")
     parser.add_argument("--pythia_card",            type=str,   default="pythia8_card.cmd", help="Path to the pythia card",)
     parser.add_argument("--mg5_pythia_interface",   type=str,   default=MG5_PYTHIA_INTERFACE,help="Path to the MG5-Pythia interface")
+    parser.add_argument("--keep_lhe",               action="store_true",                    help="Keep splited LHE files (use_lhe mode) or keep LHE file (run_gridpack mode)")
     # ********** CASE I: RUN GRIDPACK **********
     parser.add_argument("--run_gridpack",           action="store_true",                    help="Run gridpack")
     parser.add_argument("--gridpack_path",          type=str,   default="gridpacks",        help="Path to the gridpacks")
@@ -40,6 +41,8 @@ def get_args():
     parser.add_argument("--use_lhe",                action="store_true",                    help="Use LHE file")
     parser.add_argument("--lhe_path",               type=str,   default="lhe",              help="Path to the LHE file")
 
+    # ********** FEATURES TO ADD **********
+    # Add the 
     return parser.parse_args()
 
 
@@ -64,16 +67,42 @@ class fullChainInterface:
         # ********** SEEDS **********
         if self.args.seed is None: self.args.seed = random.randint(1,1000000)
         self.seeds = [self.args.seed + i for i in range(self.args.n_threads)]
-        self.logger.info(f"Seeds: {self.seeds}")
+        
+        # ********** PRINTOUT CONFIG **********
+        self.printout_config()
         
         # ********** INITIALIZATION **********
-        if self.args.use_lhe        : self.init_LHE_chain()
+        if self.args.use_lhe        : self.init_lhe_chain()
         if self.args.run_gridpack   : self.init_gridpack_chain()
         
         self.fullChainArgs = [self.get_fullchain_args(seed) for seed in self.seeds]
         
         if not os.path.exists("run_status") : os.system("mkdir run_status")
         else                                : os.system("rm -r run_status/*")
+
+
+    def printout_config(self):
+        # ********** PRINTOUT CONFIG **********
+        self.logger.info("Configuration:")
+        self.logger.info(f"Number of threads: {self.args.n_threads}")
+        self.logger.info(f"Seeds: {self.seeds}")
+        
+        if self.args.run_gridpack:
+            self.logger.info("Running mode: Gridpack")
+            self.logger.info(f"Gridpack path: {self.args.gridpack_path}")
+            self.logger.info(f"Requested events: {self.args.n_events}/ {self.args.n_events // self.args.n_threads} per thread")
+        if self.args.use_lhe:
+            nevents = os.popen(f"zgrep -c \"<event>\" {self.args.lhe_path}").read().strip()
+            self.logger.info("Running mode: LHE")
+            self.logger.info(f"LHE path: {self.args.lhe_path}")
+            self.logger.info(f"Number of events: {nevents}/ {nevents // self.args.n_threads} per thread")
+        
+        self.logger.info("PATHS:")
+        self.logger.info(f"Delphes path: {self.args.delphes_path}")
+        self.logger.info(f"Delphes card: {self.args.delphes_card}")
+        self.logger.info(f"Pythia card: {self.args.pythia_card}")
+        self.logger.info(f"MG5-Pythia interface: {self.args.mg5_pythia_interface}")
+        self.logger.info(f"Keep LHE: {self.args.keep_lhe}")
 
 
     def initialize_logging(self):
@@ -105,7 +134,7 @@ class fullChainInterface:
         return nevents
         
     
-    def init_LHE_chain(self):
+    def init_lhe_chain(self):
         if not os.path.exists(self.args.lhe_path): 
             raise FileNotFoundError(f"LHE file {self.args.lhe_path} does not exist")
 
@@ -144,6 +173,13 @@ class fullChainInterface:
             os.system(f"tar -xzf {self.gridpack_path} -C {self.gridpack_prefix}_{seed}")
         
         self.gridpack_paths = [f"./{self.gridpack_prefix}_{seed}/{self.gridpack_prefix}/" for seed in self.seeds]
+        self.lhe_paths      = [f"{self.gridpack_prefix}_{seed}/events.lhe.gz" for seed in self.seeds]
+        self.nevents        = self.args.n_events // self.args.n_threads # Number of events per thread
+        
+        if self.nevents * self.args.n_threads != self.args.n_events:
+            self.logger.warning(f"Number of events {self.args.n_events} is not divisible by number of threads {self.args.n_threads}")
+            self.logger.warning(f"Each thread will generate {self.nevents} events")
+        if self.nevents < 1 : raise ValueError("Number of events per thread is less than 1")
 
 
     def get_fullchain_args(self, seed):
@@ -162,12 +198,14 @@ class fullChainInterface:
         
         if self.args.run_gridpack:
             args["gridpack_path"]    = self.gridpack_paths[self.seeds.index(seed)]
-            args["gridpack_nevents"] = self.args.n_events
+            args["gridpack_nevents"] = self.nevents
             args["gridpack_verbose"] = False
-            args["LHE_outfile"]      = f"events_{seed}.lhe.gz"
+            args["remove_gridpack"]  = True
+            args["keep_lhe"]         = self.args.keep_lhe
+            args["lhe_outfile"]      = f"events_{seed}.lhe.gz"
             
         if self.args.use_lhe:
-            args["LHE_infile"]       = self.lhe_paths[self.seeds.index(seed)]
+            args["lhe_infile"]       = self.lhe_paths[self.seeds.index(seed)]
             
         return args
     
@@ -178,27 +216,31 @@ class fullChainInterface:
             self.runners = p.map(run_job, self.fullChainArgs)
         
         self.logger.info("All jobs finished")
+        self.cleanup()
     
-    # TODO: Implement method to clean up (mostly already done in FullChainRunner)
-    '''
-        Clean up:
-        - Remove gridpacks
-        - Remove LHE files (if split)
-    '''
     
-    # TODO: Implement method to summarize results
-    '''
-        Physics quantities to summarize:
-        - Number of requested events
-        - Number of events generated (gained after running full chain)
-        - Efficiency (events generated / requested events)
-        - Cross section
+    def cleanup(self):
+        # TODO: Implement method to clean up (mostly already done in FullChainRunner)
+        '''
+            Clean up:
+            - Remove gridpacks (already handled in FullChainRunner)
+            - Remove LHE files (already handled in FullChainRunner)
+        '''
         
-        Performance metrics:
-        - Time taken for each step (single threaded sum)
-        - Percentage of time spent in each step
+        # Remove gridpack directories
+        if self.args.run_gridpack:
+            for seed in self.seeds:
+                os.system(f"rm -r {self.gridpack_prefix}_{seed}")
         
-    '''
+        # Store log in logs directory
+        if not os.path.exists("logs"): os.system("mkdir logs")
+        for seed in self.seeds:
+            if os.path.exists(f"log_{seed}.log"):
+                os.system(f"mv log_{seed}.log logs/")
+            else:
+                self.logger.warning(f"Log file log_{seed}.log does not exist")
+    
+ 
     # def summarize_results(self):
     
     

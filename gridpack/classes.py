@@ -137,23 +137,23 @@ class FullChainRunner:
         # === Gridpack ===
         run_gridpack      : bool = True,
         gridpack_verbose  : bool = True,
-        keep_LHE          : bool = False,
+        keep_lhe          : bool = False,
         remove_gridpack   : bool = False,
         gridpack_nevents  : int  = None,
-        LHE_outfile       : str  = None,
+        lhe_outfile       : str  = None,
         gridpack_path     : str  = "./madevent",
         # === Pythia ===
         run_pythia        : bool = True,
-        keep_HEPMC        : bool = False,
+        keep_hepmc        : bool = False,
         zip_hepmc         : bool = True,
-        LHE_infile        : str  = None,
-        HEPMC_outfile     : str  = None,
+        lhe_infile        : str  = None,
+        hepmc_outfile     : str  = None,
         pythia_card       : str  = None,
         mg5_pythia_path   : str  = "/work/app/pythia8/MGInterface/1.3/MG5aMC_PY8_interface",
         # === Delphes ===
         run_delphes       : bool = True,
-        HEPMC_infile      : str  = None,
-        ROOT_outfile      : str  = None,
+        hepmc_infile      : str  = None,
+        root_outfile      : str  = None,
         delphes_card      : str  = "/work/project/physics/psriling/FCC/DelphesPythia/FCChh/FCChh_I.tcl",
         delhpes_path      : str  = "/work/home/psriling/MsProject/Delphes-3.5.0/DelphesHepMC2",
         # === Others ===
@@ -165,23 +165,23 @@ class FullChainRunner:
         # ****** Set all variables ******
         # === Gridpack ===
         self.run_gridpack       = run_gridpack
-        self.LHE_outfile        = LHE_outfile
+        self.lhe_outfile        = lhe_outfile
         self.gridpack_nevents   = gridpack_nevents
         self.gridpack_verbose   = gridpack_verbose
         self.gridpack_path      = gridpack_path
-        self.keep_LHE           = keep_LHE
+        self.keep_lhe           = keep_lhe
         self.remove_gridpack    = remove_gridpack
         # === Pythia ===
         self.run_pythia         = run_pythia
-        self.LHE_infile         = LHE_infile
-        self.HEPMC_outfile      = HEPMC_outfile
+        self.lhe_infile         = lhe_infile
+        self.hepmc_outfile      = hepmc_outfile
         self.mg5_pythia_path    = mg5_pythia_path
         self.pythia_card        = pythia_card
         self.zip_hepmc          = zip_hepmc
-        self.keep_HEPMC         = keep_HEPMC
+        self.keep_hepmc         = keep_hepmc
         # === Delphes ===
-        self.HEPMC_infile       = HEPMC_infile
-        self.ROOT_outfile       = ROOT_outfile
+        self.hepmc_infile       = hepmc_infile
+        self.root_outfile       = root_outfile
         self.delphes_card       = delphes_card
         self.delhpes_path       = delhpes_path
         self.run_delphes        = run_delphes
@@ -203,10 +203,10 @@ class FullChainRunner:
         if self.run_delphes     : self.var_init_delphes()
         
         # ****** Check for mismatches ******
-        if self.run_gridpack    : self.LHE_mismatch = self.LHE_outfile != self.LHE_infile
-        else                    : self.LHE_mismatch = False
-        if self.run_pythia      : self.HEPMC_mismatch = self.HEPMC_outfile != self.HEPMC_infile
-        else                    : self.HEPMC_mismatch = False
+        if self.run_gridpack    : self.lhe_mismatch = self.lhe_outfile != self.lhe_infile
+        else                    : self.lhe_mismatch = False
+        if self.run_pythia      : self.hepmc_mismatch = self.hepmc_outfile != self.hepmc_infile
+        else                    : self.hepmc_mismatch = False
 
 
     def initialize_logging(self):
@@ -227,12 +227,12 @@ class FullChainRunner:
             
     def var_init_gridpack(self):
         if self.gridpack_nevents is None : raise ValueError("gridpack_nevents must be specified")
-        if self.LHE_outfile is None      : self.LHE_outfile = f"events_{self.seed}.lhe.gz"
+        if self.lhe_outfile is None      : self.lhe_outfile = f"events_{self.seed}.lhe.gz"
         
         self.gridpack_runner = GridpackRunner(
             nevents         = self.gridpack_nevents,
             seed            = self.seed,
-            outfile         = self.LHE_outfile,
+            outfile         = self.lhe_outfile,
             gridpack_path   = self.gridpack_path,
             verbose         = self.gridpack_verbose,
         )
@@ -241,11 +241,11 @@ class FullChainRunner:
     
     
     def var_init_pythia(self):
-        if self.LHE_infile is None:
-            if self.run_gridpack        : self.LHE_infile = self.LHE_outfile
-            else                        : raise ValueError("LHE_infile must be specified if not running gridpack")
+        if self.lhe_infile is None:
+            if self.run_gridpack        : self.lhe_infile = self.lhe_outfile
+            else                        : raise ValueError("lhe_infile must be specified if not running gridpack")
             
-        if self.HEPMC_outfile is None   : self.HEPMC_outfile = f"events_{self.seed}.hepmc.gz"
+        if self.hepmc_outfile is None   : self.hepmc_outfile = f"events_{self.seed}.hepmc.gz"
         
         for path in [self.mg5_pythia_path, self.pythia_card]:
             if not os.path.exists(path) : raise FileNotFoundError(f"Path {path} does not exist.")
@@ -257,18 +257,18 @@ class FullChainRunner:
         with open(self.pythia_card, "r+") as f:
             contents = f.read()
             contents = contents.replace("$SEED",       str(self.seed))  \
-                               .replace("$INFILE",     self.LHE_infile) \
-                               .replace("$OUTFILE",    self.HEPMC_outfile)
+                               .replace("$INFILE",     self.lhe_infile) \
+                               .replace("$OUTFILE",    self.hepmc_outfile)
             f.seek(0)
             f.write(contents)
             f.truncate()
 
                 
     def var_init_delphes(self):
-        if self.HEPMC_infile is None:
-            if self.run_pythia          : self.HEPMC_infile = self.HEPMC_outfile
-            else                        : raise ValueError("HEPMC_infile must be specified if not running pythia")
-        if self.ROOT_outfile is None    : self.ROOT_outfile = f"events_{self.seed}.root"
+        if self.hepmc_infile is None:
+            if self.run_pythia          : self.hepmc_infile = self.hepmc_outfile
+            else                        : raise ValueError("hepmc_infile must be specified if not running pythia")
+        if self.root_outfile is None    : self.root_outfile = f"events_{self.seed}.root"
         
         for path in [self.delphes_card, self.delhpes_path]:
             if not os.path.exists(path) : raise FileNotFoundError(f"Path {path} does not exist.")
@@ -324,7 +324,7 @@ class FullChainRunner:
         base_cmd                    = f"{self.mg5_pythia_path} {self.pythia_card}"
         start_time                  = time.time()
         if self.multicore           : self.check_status()
-        if self.LHE_mismatch        : os.system(f"ln -s {self.LHE_outfile} {self.LHE_infile}")
+        if self.lhe_mismatch        : os.system(f"ln -s {self.lhe_outfile} {self.lhe_infile}")
         if self.save_log            : os.system(f"{base_cmd} >> {self.log_name} 2>&1")
         else                        : os.system(base_cmd)
         self.runtime["pythia"]      = time.time() - start_time
@@ -333,10 +333,10 @@ class FullChainRunner:
     def run_delphes_chain(self):
         self.update_status("Delphes")
         self.logger.debug(f"Running Delphes with seed {self.seed}")
-        base_cmd                    = f"{self.delhpes_path} {self.delphes_card} {self.ROOT_outfile} {self.HEPMC_infile}"
+        base_cmd                    = f"{self.delhpes_path} {self.delphes_card} {self.root_outfile} {self.hepmc_infile}"
         start_time                  = time.time()
         if self.multicore           : self.check_status()
-        if self.HEPMC_mismatch      : os.system(f"ln -s {self.HEPMC_outfile} {self.HEPMC_infile}")
+        if self.hepmc_mismatch      : os.system(f"ln -s {self.hepmc_outfile} {self.hepmc_infile}")
         if self.save_log            : os.system(f"{base_cmd} >> {self.log_name} 2>&1")
         else                        : os.system(base_cmd)
         self.runtime["delphes"]     = time.time() - start_time
@@ -344,23 +344,24 @@ class FullChainRunner:
     
     
     def cleanfiles(self):
-        if self.keep_LHE            : os.system("mkdir ./LHE")
+        if self.keep_lhe: 
+            if not os.path.exists("./LHE") : os.system("mkdir ./LHE")
         # Clean gridpack
         if self.run_gridpack:
-            if not self.keep_LHE    : os.system(f"rm -rf {self.LHE_outfile}")
-            else                    : os.system(f"mv {self.LHE_outfile} ./LHE/")
+            if not self.keep_lhe    : os.system(f"rm -rf {self.lhe_outfile}")
+            else                    : os.system(f"mv {self.lhe_outfile} ./LHE/")
             if self.remove_gridpack : os.system(f"rm -rf {self.gridpack_path}")
         # Clean pythia
         if self.run_pythia:
             os.system(f"rm -rf {self.pythia_card}")
-            if self.keep_HEPMC: 
-                if self.zip_hepmc   : os.system(f"gzip {self.HEPMC_outfile} && mv {self.HEPMC_outfile}.gz ./HEPMC/")
-                else                : os.system(f"mv {self.HEPMC_outfile} ./HEPMC/")
-            else                    : os.system(f"rm -rf {self.HEPMC_outfile}")
+            if self.keep_hepmc: 
+                if self.zip_hepmc   : os.system(f"gzip {self.hepmc_outfile} && mv {self.hepmc_outfile}.gz ./HEPMC/")
+                else                : os.system(f"mv {self.hepmc_outfile} ./HEPMC/")
+            else                    : os.system(f"rm -rf {self.hepmc_outfile}")
         # Clean delphes
         if self.run_delphes:
-            if os.path.exists("./ROOT") : os.system(f"mv {self.ROOT_outfile} ./ROOT/")
-            else                        : os.system(f"mkdir ./ROOT && mv {self.ROOT_outfile} ./ROOT/")
+            if os.path.exists("./ROOT") : os.system(f"mv {self.root_outfile} ./ROOT/")
+            else                        : os.system(f"mkdir ./ROOT && mv {self.root_outfile} ./ROOT/")
         
         if os.path.exists("djrs.dat") : os.system("rm djrs.dat")
         if os.path.exists("pts.dat")  : os.system("rm pts.dat")
@@ -394,9 +395,10 @@ class LogHandler:
         logs_paths  : str = None,
         info_path   : str = None,
     ):
-        self.logs_paths     = logs_paths
-        self.info_path      = info_path
-        self.multiple_logs  = False
+        self.logs_paths     = logs_paths    # List of log file paths
+        self.info_path      = info_path     # Path to info.csv file
+        self.multiple_logs  = False         # Flag for multiple log files
+        self.log_contents   = []            # Contain dictionaries of log contents: list[dict]
         
         if self.log_paths is None : self.log_paths = self.get_log_paths()
         if self.info_path is None : self.info_path = self.get_info_path()
@@ -452,7 +454,7 @@ class LogHandler:
             
     
     def read_log(self) -> list:
-        self.log_contents = [] # Contain dictionaries of log contents
+        self.log_contents = [] 
         for log_path in self.logs_paths:
             with open(log_path, "r") as f: lines = f.read().split("\n")
 
@@ -472,9 +474,43 @@ class LogHandler:
             }
             self.log_contents.append(log_dict)
         return self.log_contents
-            
-            
+    
+    
+    def get_log_contents(self) -> list:
+        if len(self.log_contents) == 0 : self.read_log()
+        return self.log_contents
+    
 
+    def get_summarize(self, format : str = "str") -> str: 
+        '''Summarize the log contents into a multiple line of string
+            if format == "str": return a string,
+            if format == "list"" return a string with split lines (\n)
+        '''
+        log_contents    = self.get_log_contents()
+        ljust_width     = 20
+        out_str         = f"{'='*19} Physics Summary {'='*19}\n"
+        header          = "Seed".ljust(ljust_width) + \
+                          "Requested events".ljust(ljust_width) + \
+                          "Gained events".ljust(ljust_width) + \
+                          "Efficiency".ljust(ljust_width) + \
+                          "Cross-section (pb)".ljust(ljust_width) + \
+                          "Uncertainty (pb)".ljust(ljust_width) + "\n"
+        out_str += header
+        
+        for log in log_contents:
+            seed        = str(log.get("seed", "None")).ljust(ljust_width)
+            requested   = str(log.get("requested", "None")).ljust(ljust_width)
+            gained      = str(log.get("gained", "None")).ljust(ljust_width)
+            efficiency  = str(log.get("efficiency", "None")).ljust(ljust_width)
+            cross_sec   = str(log.get("cross_section", "None")).ljust(ljust_width)
+            unc         = str(log.get("uncertainty", "None")).ljust(ljust_width)
+            
+            out_str += seed + requested + gained + efficiency + cross_sec + unc + "\n"
+        
+        if format == "str"    : return out_str
+        elif format == "list" : return out_str.split("\n")
+        else                  : raise ValueError("Invalid format")
+        
 '''
     Test
     1. Test running standalone gridpack (GridpackRunner)
@@ -489,12 +525,12 @@ class Tester:
         seed: int = 1,
         gridpack_path = "./madevent",
         gridpack_nevents = 100,
-        LHE_outfile = "test.lhe.gz",
+        lhe_outfile = "test.lhe.gz",
     ):
         self.seed = seed
         self.gridpack_path = gridpack_path
         self.gridpack_nevents = gridpack_nevents
-        self.LHE_outfile = LHE_outfile
+        self.lhe_outfile = lhe_outfile
         self.gridpack_log = "gridpack.log"
         
         self.initialize_logging()
@@ -512,7 +548,7 @@ class Tester:
         gridpack_runner = GridpackRunner(
             nevents         = self.gridpack_nevents,
             seed            = self.seed,
-            outfile         = self.LHE_outfile,
+            outfile         = self.lhe_outfile,
             gridpack_path   = self.gridpack_path,
             verbose         = True,
         )
@@ -523,7 +559,7 @@ class Tester:
         gridpack_runner = GridpackRunner(
             nevents         = self.gridpack_nevents,
             seed            = self.seed,
-            outfile         = self.LHE_outfile,
+            outfile         = self.lhe_outfile,
             gridpack_path   = self.gridpack_path,
             verbose         = False,
         )
@@ -534,7 +570,7 @@ class Tester:
         gridpack_runner = GridpackRunner(
             nevents         = self.gridpack_nevents,
             seed            = self.seed,
-            outfile         = self.LHE_outfile,
+            outfile         = self.lhe_outfile,
             gridpack_path   = self.gridpack_path,
             verbose         = True,
             log_file        = 'case3.log',
@@ -546,7 +582,7 @@ class Tester:
         gridpack_runner = GridpackRunner(
             nevents         = self.gridpack_nevents,
             seed            = self.seed,
-            outfile         = self.LHE_outfile,
+            outfile         = self.lhe_outfile,
             gridpack_path   = self.gridpack_path,
             verbose         = False,
             log_file        = 'case4.log',
@@ -559,7 +595,7 @@ class Tester:
             seed            = self.seed,
             run_gridpack    = True,
             gridpack_nevents= self.gridpack_nevents,
-            LHE_outfile     = self.LHE_outfile,
+            lhe_outfile     = self.lhe_outfile,
             gridpack_path   = self.gridpack_path,
             gridpack_verbose= False,
             pythia_card     = "pythia8_card.cmd",
