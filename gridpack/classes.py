@@ -190,7 +190,11 @@ class FullChainRunner:
         self.save_log           = save_log
         self.log_name           = log_name
         self.log_level          = log_level
-        self.runtime            = {}
+        self.runtime            = {
+            "gridpack"  : 0,
+            "pythia"    : 0,
+            "delphes"   : 0,
+        }
         
         # ****** Initialize variables ******
         if seed is None         : self.seed = random.randint(0, 100000)
@@ -210,7 +214,7 @@ class FullChainRunner:
 
 
     def initialize_logging(self):
-        self.logger         = logging.getLogger("FullChainRunner")
+        self.logger         = logging.getLogger('.')
         log_level_mapping   = {
             "DEBUG"    : logging.DEBUG,
             "INFO"     : logging.INFO,
@@ -293,7 +297,8 @@ class FullChainRunner:
         groups          = set(file.split(".")[1] for file in file_list)
         group_counts    = {group: len([file for file in file_list if file.split(".")[1] == group]) for group in groups}
         sort_guide      = ["Gridpack", "Pythia", "Delphes"]
-        out_str         = "Running: "
+        time_stamp      = time.strftime("%Y-%m-%d %H:%M:%S")
+        out_str         = f"{time_stamp}> Running: ["  # Add timestamp
 
         for group in sort_guide:
             if group in group_counts:
@@ -305,7 +310,7 @@ class FullChainRunner:
 
         out_str     = out_str[:-2]
         done_count  = group_counts.get("Done", 0)  # Use .get() to avoid KeyError
-        out_str     += f" Done: {done_count}/{len(file_list)}"
+        out_str     += f"] Done: [{done_count}/{len(file_list)}]"
 
         self.logger.info(out_str)
 
@@ -392,23 +397,32 @@ class FullChainRunner:
 class LogHandler:
     def __init__(
         self,
-        logs_paths  : str = None,
+        logs_dir    : str = None,
         info_path   : str = None,
     ):
-        self.logs_paths     = logs_paths    # List of log file paths
+        self.logs_dir      = logs_dir     # Path to log files
         self.info_path      = info_path     # Path to info.csv file
         self.multiple_logs  = False         # Flag for multiple log files
         self.log_contents   = []            # Contain dictionaries of log contents: list[dict]
         
-        if self.log_paths is None : self.log_paths = self.get_log_paths()
+        if self.logs_dir is None : self.logs_dir = './'
         if self.info_path is None : self.info_path = self.get_info_path()
         
+        self.log_paths = self.get_log_paths(self.logs_dir)
+        
     
-    def get_log_paths(self):
-        log_files = [file for file in os.listdir() if file.endswith(".log")]
+    def get_log_paths(self, dir):
+        log_files = [os.path.join(dir, file) for file in os.listdir(dir) if file.endswith(".log")]
+        log_files.sort()
         if len(log_files) == 0  : raise FileNotFoundError("No log files found in the current directory.")
         elif len(log_files) > 1 : self.multiple_logs = True
         return log_files
+    
+    
+    def get_info_csv(self):
+        if self.info_pd is None:
+            self.info_pd = pd.read_csv(self.info_path)
+        return self.info_pd
     
     
     def get_info_path(self):
@@ -439,8 +453,8 @@ class LogHandler:
         for line in lines:
             if "| sum" in line:
                 num = line.split("|")[-3]
-                spt_num = num.split()
-                selected, accepted = spt_num[0], spt_num[-1]
+                spt_num = num.split() # got 3 numbers: Tried Selected Accepted
+                tried, selected, accepted = spt_num
                 return int(selected), int(accepted)
         return None, None
     
@@ -455,7 +469,7 @@ class LogHandler:
     
     def read_log(self) -> list:
         self.log_contents = [] 
-        for log_path in self.logs_paths:
+        for log_path in self.log_paths:
             with open(log_path, "r") as f: lines = f.read().split("\n")
 
             cross_section, unc  = self.extract_cross_section(lines)
@@ -464,14 +478,16 @@ class LogHandler:
             info_row            = self.extract_info_row(seed)
             
             log_dict = {
-                "seed"          : seed,                 # Seed
-                "cross_section" : cross_section,        # Cross section in pb
-                "uncertainty"   : unc,                  # Uncertainty in pb
-                "selected"      : selected,
-                "accepted"      : accepted,
-                "requested"     : info_row.get("nevents", None),
+                "seed"          : seed,                     # Seed
+                "cross_section" : round(cross_section, 2),  # Cross section in pb
+                "uncertainty"   : round(unc, 2),            # Uncertainty in pb
+                "requested"     : selected,                 # Requested events
+                "accepted"      : accepted,                 # Accepted events after MLM matching, Pythia cuts, etc.
+                "efficiency"    : round(accepted / selected, 2),
                 "info_row"      : info_row,             # Info row from info.csv
             }
+            # Round the numbers: cross section, uncertainty, efficiency
+            
             self.log_contents.append(log_dict)
         return self.log_contents
     
@@ -479,6 +495,14 @@ class LogHandler:
     def get_log_contents(self) -> list:
         if len(self.log_contents) == 0 : self.read_log()
         return self.log_contents
+    
+    
+    def get_log_content(self, seed : int) -> dict:
+        '''Get log content by seed'''
+        if len(self.log_contents) == 0 : self.read_log()
+        for log in self.log_contents:
+            if log.get("seed") == seed: return log
+        return None
     
 
     def get_summarize(self, format : str = "str") -> str: 
@@ -491,7 +515,7 @@ class LogHandler:
         out_str         = f"{'='*19} Physics Summary {'='*19}\n"
         header          = "Seed".ljust(ljust_width) + \
                           "Requested events".ljust(ljust_width) + \
-                          "Gained events".ljust(ljust_width) + \
+                          "Accepted events".ljust(ljust_width) + \
                           "Efficiency".ljust(ljust_width) + \
                           "Cross-section (pb)".ljust(ljust_width) + \
                           "Uncertainty (pb)".ljust(ljust_width) + "\n"
@@ -500,12 +524,13 @@ class LogHandler:
         for log in log_contents:
             seed        = str(log.get("seed", "None")).ljust(ljust_width)
             requested   = str(log.get("requested", "None")).ljust(ljust_width)
-            gained      = str(log.get("gained", "None")).ljust(ljust_width)
+            accepted    = str(log.get("accepted", "None")).ljust(ljust_width)
             efficiency  = str(log.get("efficiency", "None")).ljust(ljust_width)
             cross_sec   = str(log.get("cross_section", "None")).ljust(ljust_width)
             unc         = str(log.get("uncertainty", "None")).ljust(ljust_width)
             
-            out_str += seed + requested + gained + efficiency + cross_sec + unc + "\n"
+            # out_str += seed + requested + accepted + efficiency + cross_sec + unc + "\n"
+            out_str += f"{seed}{requested}{accepted}{efficiency}{cross_sec}{unc}\n"
         
         if format == "str"    : return out_str
         elif format == "list" : return out_str.split("\n")

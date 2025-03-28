@@ -11,7 +11,7 @@ import numpy as np
 import logging
 from multiprocessing import Pool
 
-from classes import FullChainRunner, format_time
+from classes import FullChainRunner, LogHandler, format_time
 
 ROOT.gInterpreter.ProcessLine("gErrorIgnoreLevel = kFatal;") # suppress ROOT TClass warnings
 
@@ -42,10 +42,33 @@ def get_args():
     parser.add_argument("--lhe_path",               type=str,   default="lhe",              help="Path to the LHE file")
 
     # ********** FEATURES TO ADD **********
-    # Add the 
+    parser.add_argument("--example_inputs",         action="store_true",                    help="Show example inputs (both gridpack and LHE cases)")
     return parser.parse_args()
 
 
+def print_example_inputs():
+    out_str = '''
+    Example inputs:
+    Gridpack:
+    python fullchain_interface.py \\
+        --run_gridpack \\
+        --gridpack_path GRIDPACK_PATH \\
+        --seed SEED \\
+        --n_events NEVENTS \\
+        --n_threads NTHREADS
+        # Optional: --keep_lhe
+        
+    LHE:
+    python fullchain_interface.py \\
+        --use_lhe \\
+        --lhe_path LHE_PATH \\
+        --seed SEED \\
+        --n_threads NTHREADS
+        # Optional: --keep_lhe
+    '''
+    print(out_str)
+    # Exit the program
+    sys.exit(0)
 
 def run_job(args): # FOR ASSIGN TO MULTIPROCESSING
     runner = FullChainRunner(**args)
@@ -54,9 +77,14 @@ def run_job(args): # FOR ASSIGN TO MULTIPROCESSING
 
 
 
+
+
 class fullChainInterface:
     def __init__(self):
         self.args = get_args()
+        
+        if self.args.example_inputs: print_example_inputs()
+        
         self.initialize_logging()
         
         if self.args.run_gridpack and self.args.use_lhe:
@@ -72,41 +100,46 @@ class fullChainInterface:
         self.printout_config()
         
         # ********** INITIALIZATION **********
-        if self.args.use_lhe        : self.init_lhe_chain()
-        if self.args.run_gridpack   : self.init_gridpack_chain()
-        
-        self.fullChainArgs = [self.get_fullchain_args(seed) for seed in self.seeds]
-        
+        if self.args.use_lhe                : self.init_lhe_chain()
+        if self.args.run_gridpack           : self.init_gridpack_chain()
+        if not os.path.exists("info.csv")   : self.init_info_csv()
         if not os.path.exists("run_status") : os.system("mkdir run_status")
         else                                : os.system("rm -r run_status/*")
+        
+        self.fullChainArgs = [self.get_fullchain_args(seed) for seed in self.seeds]
 
 
     def printout_config(self):
         # ********** PRINTOUT CONFIG **********
-        self.logger.info("Configuration:")
-        self.logger.info(f"Number of threads: {self.args.n_threads}")
-        self.logger.info(f"Seeds: {self.seeds}")
-        
+        out_str = '\n'
+        out_str +=  f"{'='*20} CONFIG {'='*20}\n" + \
+                    f"Number of threads: {self.args.n_threads}\n" + \
+                    f"Seeds: {self.seeds}\n"
+                    
         if self.args.run_gridpack:
-            self.logger.info("Running mode: Gridpack")
-            self.logger.info(f"Gridpack path: {self.args.gridpack_path}")
-            self.logger.info(f"Requested events: {self.args.n_events}/ {self.args.n_events // self.args.n_threads} per thread")
+            out_str += "Running mode: Gridpack\n" + \
+                        f"Gridpack path: {self.args.gridpack_path}\n" + \
+                        f"Requested events: {self.args.n_events}/ {self.args.n_events // self.args.n_threads} per thread\n"
         if self.args.use_lhe:
             nevents = os.popen(f"zgrep -c \"<event>\" {self.args.lhe_path}").read().strip()
-            self.logger.info("Running mode: LHE")
-            self.logger.info(f"LHE path: {self.args.lhe_path}")
-            self.logger.info(f"Number of events: {nevents}/ {nevents // self.args.n_threads} per thread")
-        
-        self.logger.info("PATHS:")
-        self.logger.info(f"Delphes path: {self.args.delphes_path}")
-        self.logger.info(f"Delphes card: {self.args.delphes_card}")
-        self.logger.info(f"Pythia card: {self.args.pythia_card}")
-        self.logger.info(f"MG5-Pythia interface: {self.args.mg5_pythia_interface}")
-        self.logger.info(f"Keep LHE: {self.args.keep_lhe}")
+            out_str += "Running mode: LHE\n" + \
+                        f"LHE path: {self.args.lhe_path}\n" + \
+                        f"Number of events: {nevents}/ {nevents // self.args.n_threads} per thread\n"
+        # Paths        
+        out_str +=  "\nPATHS:\n" + \
+                    f"Delphes path: {self.args.delphes_path}\n" + \
+                    f"Delphes card: {self.args.delphes_card}\n" + \
+                    f"MG5-Pythia interface: {self.args.mg5_pythia_interface}\n" + \
+                    f"Pythia card: {self.args.pythia_card}\n" 
+        # Optional
+        out_str +=  "\nOptional:\n" + \
+                    f"Keep LHE: {self.args.keep_lhe}\n" + \
+                    f"{'='*50}\n"
+        self.logger.info(out_str)
 
 
     def initialize_logging(self):
-        self.logger = logging.getLogger('Interface')
+        self.logger = logging.getLogger('.')
         self.logger.setLevel(logging.INFO)
     
     
@@ -135,6 +168,7 @@ class fullChainInterface:
         
     
     def init_lhe_chain(self):
+        self.logger.info("Splitting LHE file")
         if not os.path.exists(self.args.lhe_path): 
             raise FileNotFoundError(f"LHE file {self.args.lhe_path} does not exist")
 
@@ -144,7 +178,7 @@ class fullChainInterface:
         else:
             self.lhe_path = self.args.lhe_path
             
-        self.nevents = self.split_lhe(self.lhe_path, self.args.n_threads)
+        self.nevents = self.split_lhe(self.lhe_path, self.args.n_threads) // self.args.n_threads
         prefix_name  = self.lhe_path.replace(".lhe", "")
         
         for i in range(self.args.n_threads):
@@ -156,6 +190,7 @@ class fullChainInterface:
         
     
     def init_gridpack_chain(self):
+        self.logger.info("Extracting gridpack")
         if not os.path.exists(self.args.gridpack_path): 
             raise FileNotFoundError(f"Gridpack path {self.args.gridpack_path} does not exist")
         
@@ -180,6 +215,30 @@ class fullChainInterface:
             self.logger.warning(f"Number of events {self.args.n_events} is not divisible by number of threads {self.args.n_threads}")
             self.logger.warning(f"Each thread will generate {self.nevents} events")
         if self.nevents < 1 : raise ValueError("Number of events per thread is less than 1")
+
+
+    def init_info_csv(self):
+        '''Initialize info.csv file'''
+        if not os.path.exists("info.csv"):
+            with open("info.csv", "w") as f:
+                f.write("seed,expected_nevents,lhe_nevents,gained_nevents,runtime,madgraph,pythia,delphes\n")
+
+
+    def write_info_csv(self, log_handler : LogHandler):
+        '''Write to info.csv file'''
+        # Expected columns: seed, expected_nevents, lhe_nevents, gained_nevents, runtime, madgraph, pythia, delphes
+        with open("info.csv", "a") as f:
+            for i, seed in enumerate(self.seeds):
+                log_dict = log_handler.get_log_content(seed)
+                runtime  = self.runners[i].runtime # Dictionary
+                
+                f.write(f"{seed},{self.nevents},"+
+                        f"{log_dict['requested']},"+
+                        f"{log_dict['accepted']},"+
+                        f"{runtime['overall']},"+
+                        f"{runtime['gridpack']},"+
+                        f"{runtime['pythia']},"+
+                        f"{runtime['delphes']}\n")
 
 
     def get_fullchain_args(self, seed):
@@ -211,37 +270,95 @@ class fullChainInterface:
     
     
     def run_fullchain_parallel(self):
+        self.logger.info("Running full chain in parallel")
+        start_time = time.time()
         '''Run full chain in parallel'''
         with Pool(self.args.n_threads) as p:
             self.runners = p.map(run_job, self.fullChainArgs)
-        
+        self.runtime = time.time() - start_time
         self.logger.info("All jobs finished")
         self.cleanup()
+        self.summarize_results()
     
     
     def cleanup(self):
-        # TODO: Implement method to clean up (mostly already done in FullChainRunner)
-        '''
-            Clean up:
-            - Remove gridpacks (already handled in FullChainRunner)
-            - Remove LHE files (already handled in FullChainRunner)
-        '''
-        
-        # Remove gridpack directories
+        '''Cleanup after running full chain'''
         if self.args.run_gridpack:
             for seed in self.seeds:
                 os.system(f"rm -r {self.gridpack_prefix}_{seed}")
         
-        # Store log in logs directory
         if not os.path.exists("logs"): os.system("mkdir logs")
         for seed in self.seeds:
             if os.path.exists(f"log_{seed}.log"):
                 os.system(f"mv log_{seed}.log logs/")
             else:
                 self.logger.warning(f"Log file log_{seed}.log does not exist")
-    
+
+
  
-    # def summarize_results(self):
+    def summarize_results(self):
+        log_handler = LogHandler(
+            logs_dir = "logs",
+            info_path= "info.csv",
+        )
+
+        self.write_info_csv(log_handler)
+        ljust_len       = 20
+        nevents         = self.nevents * self.args.n_threads
+        total_accepted  = sum([log_handler.get_log_content(seed)["accepted"] for seed in self.seeds])
+        efficiency      = total_accepted / self.args.n_events
+        
+        
+        # Total runtime
+        runner_list     = [runner.runtime for runner in self.runners]
+        madgraph_total  = sum([runtime["gridpack"] for runtime in runner_list])
+        pythia_total    = sum([runtime["pythia"] for runtime in runner_list])
+        delphes_total   = sum([runtime["delphes"] for runtime in runner_list])
+        
+        # Overall runtime
+        multi_runtime   = self.runtime
+        single_runtime  = madgraph_total + pythia_total + delphes_total
+        
+        # Percentage of total runtime
+        madgraph_percent = 100 * madgraph_total / single_runtime
+        pythia_percent   = 100 * pythia_total / single_runtime
+        delphes_percent  = 100 * delphes_total / single_runtime
+        
+        # Average runtime per thread
+        madgraph_per_thread = madgraph_total / self.args.n_threads
+        pythia_per_thread   = pythia_total / self.args.n_threads
+        delphes_per_thread  = delphes_total / self.args.n_threads
+        
+        # Event rate
+        multi_rate      = nevents / multi_runtime
+        single_rate     = nevents / single_runtime
+        
+        # CPU efficiency
+        cpu_efficiency  = single_runtime / multi_runtime
+    
+        out_str   = "\n"
+        out_str  += log_handler.get_summarize(format="str") + \
+                    f"\n{'='*20} Performance Report {'='*20}\n" + \
+                    f"Expected events: {nevents}\n" + \
+                    f"Gained events: {total_accepted}\n" + \
+                    f"Efficiency: {efficiency:.4f}\n" + \
+                    f"\n>Runtime (total, single-core)\n" + \
+                    f"\t- Madgraph :\t" + f'{format_time(madgraph_total)}'.ljust(ljust_len) + f"({madgraph_percent:.2f}%)\n" + \
+                    f"\t- Pythia   :\t" + f'{format_time(pythia_total)}'.ljust(ljust_len) + f"({pythia_percent:.2f}%)\n" + \
+                    f"\t- Delphes  :\t" + f'{format_time(delphes_total)}'.ljust(ljust_len) + f"({delphes_percent:.2f}%)\n" + \
+                    f"\n>Average runtime per thread:\n" + \
+                    f"\t- Madgraph : \t{format_time(madgraph_per_thread)}\n" + \
+                    f"\t- Pythia   : \t{format_time(pythia_per_thread)}\n" + \
+                    f"\t- Delphes  : \t{format_time(delphes_per_thread)}\n" + \
+                    f"\n>Overall runtime:\n" + \
+                    f"\t- Single-core :\t" + f'{format_time(single_runtime)}'.ljust(ljust_len) + f"{single_rate:.2f} evts/s\n" + \
+                    f"\t- Multi-cores :\t" + f'{format_time(multi_runtime)}'.ljust(ljust_len) + f"{multi_rate:.2f} evts/s\n" + \
+                    f"\n>CPU efficiency: {cpu_efficiency:.2f}\n"
+                    
+        # Logging
+        self.logger.info(out_str)
+        
+            
     
     
 if __name__ == "__main__":
