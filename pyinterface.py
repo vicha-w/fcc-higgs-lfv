@@ -257,7 +257,7 @@ def post_process(args):
 
 def run_cut(file, out_file):
     command = (
-        f'root -l -b -q "read-fcc-higgs-v2.cpp(\\"{file}\\", \\"{out_file}\\")"'
+        f'root -l -b -q "read-fcc-higgs-v2.cpp(\\"{file}\\", \\"{out_file}\\")" > log_{out_file}.txt 2>&1'
     )
     start_time = time.time()
     os.system(command)
