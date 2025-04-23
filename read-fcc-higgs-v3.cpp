@@ -129,6 +129,12 @@ void read_fcc_higgs_v3(TString infilename, TString outfilename)
         intree->Add(filename.c_str());
     }
 
+    intree->SetBranchAddress("*", 0);
+    intree->SetBranchAddress("Jet*", 1);
+    intree->SetBranchAddress("Electron*", 1);
+    intree->SetBranchAddress("Muon*", 1);
+    intree->SetBranchAddress("MissingET*", 1);
+
     Delphes *indelphes = new Delphes(intree);
 
     PlotSet plots_mutaue;
@@ -228,12 +234,6 @@ void read_fcc_higgs_v3(TString infilename, TString outfilename)
     TLorentzVector p4_muon, p4_electron, p4_met;
     double pT_nu_est, x_vis_tau;
     double deltaPhi_e_met, deltaPhi_mu_met, deltaPhi_e_mu;
-
-    indelphes->SetBranchStatus("*", 0);
-    indelphes->SetBranchStatus("Jet*", 1);
-    indelphes->SetBranchStatus("Electron*", 1);
-    indelphes->SetBranchStatus("Muon*", 1);
-    indelphes->SetBranchStatus("MissingET*", 1);
 
     for (Long64_t ievent=0; ievent < intree->GetEntries(); ievent++)
     {
