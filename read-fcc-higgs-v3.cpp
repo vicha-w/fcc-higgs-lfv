@@ -229,6 +229,12 @@ void read_fcc_higgs_v3(TString infilename, TString outfilename)
     double pT_nu_est, x_vis_tau;
     double deltaPhi_e_met, deltaPhi_mu_met, deltaPhi_e_mu;
 
+    indelphes->SetBranchStatus("*", 0);
+    indelphes->SetBranchStatus("Jet*", 1);
+    indelphes->SetBranchStatus("Electron*", 1);
+    indelphes->SetBranchStatus("Muon*", 1);
+    indelphes->SetBranchStatus("MissingET*", 1);
+
     for (Long64_t ievent=0; ievent < intree->GetEntries(); ievent++)
     {
         if (ievent % 10000 == 0) printf("Reading event %lld\n", ievent);
