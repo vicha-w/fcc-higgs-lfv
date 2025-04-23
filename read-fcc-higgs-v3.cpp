@@ -129,11 +129,11 @@ void read_fcc_higgs_v3(TString infilename, TString outfilename)
         intree->Add(filename.c_str());
     }
 
-    intree->SetBranchAddress("*", 0);
-    intree->SetBranchAddress("Jet*", 1);
-    intree->SetBranchAddress("Electron*", 1);
-    intree->SetBranchAddress("Muon*", 1);
-    intree->SetBranchAddress("MissingET*", 1);
+    intree->SetBranchStatus("*", 0);
+    intree->SetBranchStatus("Jet*", 1);
+    intree->SetBranchStatus("Electron*", 1);
+    intree->SetBranchStatus("Muon*", 1);
+    intree->SetBranchStatus("MissingET*", 1);
 
     Delphes *indelphes = new Delphes(intree);
 
@@ -659,7 +659,7 @@ void read_fcc_higgs_v3(TString infilename, TString outfilename)
             if (plotthis_etaumu[njet][6])
             {
                 deltaPhi_e_mu = deltaPhi(indelphes->Electron_Phi[only_ele], indelphes->Muon_Phi[only_mu]);
-                plotthis_etaumu[njet][7] = deltaPhi_mu_met > 2.2;
+                plotthis_etaumu[njet][7] = deltaPhi_e_mu > 2.2;
             }
             if (plotthis_etaumu[njet][7])
             {
