@@ -10,9 +10,9 @@
 
 using namespace std;
 
-const int HIST_BINS = 200;
+const int HIST_BINS = 20;
 const double HIST_START = 0;
-const double HIST_END   = 2000;
+const double HIST_END   = 1500;
 const int MAX_JETS = 2;
 
 std::vector<std::string> glob(const char *pattern) {
@@ -129,13 +129,13 @@ void read_fcc_higgs_v3(TString infilename, TString outfilename)
         intree->Add(filename.c_str());
     }
 
+    
+    Delphes *indelphes = new Delphes(intree);
     intree->SetBranchStatus("*", 0);
     intree->SetBranchStatus("Jet*", 1);
     intree->SetBranchStatus("Electron*", 1);
     intree->SetBranchStatus("Muon*", 1);
     intree->SetBranchStatus("MissingET*", 1);
-
-    Delphes *indelphes = new Delphes(intree);
 
     PlotSet plots_mutaue;
     PlotSet plots_etaumu;
@@ -240,6 +240,28 @@ void read_fcc_higgs_v3(TString infilename, TString outfilename)
         if (ievent % 10000 == 0) printf("Reading event %lld\n", ievent);
         indelphes->GetEntry(ievent);
 
+        // Loop to filter lepton
+        // muon > 10 GeV, electron > 5 GeV
+        // any event with additional lepton (after filter) is discarded
+        // only exactly one muon and one electron is allowed
+        // logic: loop through muons and electrons, count number of candidates with pT > threshold
+        // if more than one candidate is found, skip the event
+        int muon_count = 0;
+        for (int mu=0; mu<indelphes->Muon_size; mu++)
+        {
+            if (indelphes->Muon_PT[mu] < 10) continue;
+            if (TMath::Abs(indelphes->Muon_Eta[mu]) > 6.0) continue;
+            muon_count++;
+        }
+        if (muon_count != 1) continue;
+        int electron_count = 0;
+        for (int el=0; el<indelphes->Electron_size; el++)
+        {
+            if (indelphes->Electron_PT[el] < 5) continue;
+            if (TMath::Abs(indelphes->Electron_Eta[el]) > 6.0) continue;
+            electron_count++;
+        }
+        if (electron_count != 1) continue;
         ///////////////////////////////////////
         // mu + tau_e
         ///////////////////////////////////////

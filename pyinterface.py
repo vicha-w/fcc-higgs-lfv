@@ -145,7 +145,7 @@ def job_submit(args):
         outdir = args.outdir
         os.makedirs(outdir)
 
-        script_files = ["Delphes.C", "Delphes.h", "read-fcc-higgs-v2.cpp"]
+        script_files = ["Delphes.C", "Delphes.h", "read-fcc-higgs-v2.cpp", "read-fcc-higgs-v3.cpp"]
         for script_file in script_files:
             os.system(f"cp {script_file} {outdir}")
 
@@ -188,11 +188,62 @@ def post_process(args):
 
     """
     import copy
+    import ROOT
     # 30 ab^-1 / (N/ cross-section) = scale factor
     def compute_scale(cross_section, N, target_lumi):
         if N == -1:
             return None
         return target_lumi / (N / cross_section)
+
+    def get_max_njet():
+        # Get the max number of jets from the files
+        files = [f for f in os.listdir() if (f.endswith(".root") and f != "merged.root")]
+        file = files[0]
+        file = ROOT.TFile(file)
+        keys = file.GetListOfKeys()
+        hist_names = [key.GetName() for key in keys if "etau_mu_highmass" in key.GetName()]
+        njets = [int(name.split("_")[-1][0]) for name in hist_names]
+        max_njet = max(njets)
+        return max_njet
+        
+
+    # list for printing cut flow
+    # structure:
+    cut_flow = {}
+    max_njet = get_max_njet()
+    for njet in range(max_njet+1):
+        for category in ["lowmass", "highmass"]:
+            cut_flow[f"mutau_e_{category}_{njet}j"] = [
+                {'hist_name': f"mutau_e_step00", 'desc': 'No cut'},
+                {'hist_name': f"mutau_e_step01", 'desc': 'b-jets rejection'},
+                {'hist_name': f"mutau_e_step02", 'desc': 'inclusive 0, 1 jets'},
+                {'hist_name': f"mutau_e_step03_{njet}j", 'desc': f'{njet} jets'},
+                {'hist_name': f"mutau_e_step04_{njet}j", 'desc': '1+ muon passed selection'},
+                {'hist_name': f"mutau_e_step05_{njet}j", 'desc': '1 muon passed selection'},
+                {'hist_name': f"mutau_e_step06_{njet}j", 'desc': '1+ electron passed selection'},
+                {'hist_name': f"mutau_e_step07_{njet}j", 'desc': '1 electron passed selection'},
+                {'hist_name': f"mutau_e_step08_{njet}j", 'desc': 'muon min pT cut'},
+                {'hist_name': f"mutau_e_step09_{njet}j", 'desc': 'e, MET max DeltaPhi cut'},
+                {'hist_name': f"mutau_e_step10_{njet}j", 'desc': 'e, mu min DeltaPhi cut'},
+                {'hist_name': f"mutau_e_{category}_{njet}j", 'desc': 'final selection'},
+            ]
+    for njet in range(max_njet+1):
+        for category in ["lowmass", "highmass"]:
+            cut_flow[f"etau_mu_{category}_{njet}j"] = [
+                {'hist_name': f"etau_mu_step00", 'desc': 'No cut'},
+                {'hist_name': f"etau_mu_step01", 'desc': 'b-jets rejection'},
+                {'hist_name': f"etau_mu_step02", 'desc': 'inclusive 0, 1 jets'},
+                {'hist_name': f"etau_mu_step03_{njet}j", 'desc': f'{njet} jets'},
+                {'hist_name': f"etau_mu_step04_{njet}j", 'desc': '1+ electron passed selection'},
+                {'hist_name': f"etau_mu_step05_{njet}j", 'desc': '1 electron passed selection'},
+                {'hist_name': f"etau_mu_step06_{njet}j", 'desc': '1+ muon passed selection'},
+                {'hist_name': f"etau_mu_step07_{njet}j", 'desc': '1 muon passed selection'},
+                {'hist_name': f"etau_mu_step08_{njet}j", 'desc': 'electron min pT cut'},
+                {'hist_name': f"etau_mu_step09_{njet}j", 'desc': 'mu, MET max DeltaPhi cut'},
+                {'hist_name': f"etau_mu_step10_{njet}j", 'desc': 'mu, e min DeltaPhi cut'},
+                {'hist_name': f"etau_mu_{category}_{njet}j", 'desc': 'final selection'},
+            ]
+            
 
     # Mapping all files
     files = [f for f in os.listdir() if (f.endswith(".root") and f != "merged.root")]
@@ -225,6 +276,21 @@ def post_process(args):
     for key, hist in hist_dicts.items():
         hist.Write()
 
+    # Print cut flow,
+    # N_event of each step, pct change from previous step, desc
+    print("\nCut flow")
+    for key, hist in cut_flow.items():
+        print(f"\n{key}")
+        for i in range(len(hist)):
+            curr_hist = hist[i]['hist_name']
+            curr_entries = hist_dicts[curr_hist].GetEntries()
+            if i == 0:
+                prev_entries = curr_entries
+            else:
+                prev_hist = hist[i-1]['hist_name']
+                prev_entries = hist_dicts[prev_hist].GetEntries()
+            pct_change = (curr_entries - prev_entries) / prev_entries * 100 if prev_entries > 0 else 0
+            print(f"\t{curr_hist.ljust(ljust_space)}: {str(int(curr_entries)).ljust(ljust_space)} ({pct_change:.2f}%) \t{hist[i]['desc']}")
 
 
     # ================== Weighting ==================
@@ -239,8 +305,8 @@ def post_process(args):
         print(f"Process: {process}")
         
     cross_section = ALL_PROCESSES[process]["cross-section"]
-    target_lumi = 30
-    target_lumi_pb = target_lumi * 1000
+    target_lumi = 30 # ab^-1
+    target_lumi_pb = target_lumi * 1e6 # pb^-1
     scale = compute_scale(cross_section, tot_evts, target_lumi_pb) # 30 ab^-1
     print(f"\tTotal events: {int(tot_evts)}, \n\tCross-section: {cross_section} pb, \n\tTarget lumi: {target_lumi_pb} pb^-1, \n\tScale: {scale}")
     
@@ -257,7 +323,7 @@ def post_process(args):
 
 def run_cut(file, out_file):
     command = (
-        f'root -l -b -q "read-fcc-higgs-v2.cpp(\\"{file}\\", \\"{out_file}\\")" > log_{out_file}.txt 2>&1'
+        f'root -l -b -q "read-fcc-higgs-v3.cpp(\\"{file}\\", \\"{out_file}\\")" > log_{out_file}.txt 2>&1'
     )
     start_time = time.time()
     os.system(command)
@@ -267,9 +333,17 @@ def run_cut(file, out_file):
     # Experiment, open info.csv and get the line with column file == file
     # Update the time_taken column with the time_taken
     import pandas as pd
+    import random
+    # To avoid conflict with the other processes, create info.status.reading to indicate the file is being read
+    while os.path.exists("info.status.reading"):
+        # Random sleep 1-2 seconds
+        rnd = random.uniform(1, 2)
+        time.sleep(rnd)
+    os.system("touch info.status.reading")
     df = pd.read_csv("info.csv")
     df.loc[df["file"] == file, "time_taken"] = time_taken
     df.to_csv("info.csv", index=False)
+    os.system("rm info.status.reading")
     
     return {"file": file, "time_taken": time_taken}
 
